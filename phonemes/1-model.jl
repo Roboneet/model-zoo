@@ -1,6 +1,6 @@
 # Based on https://arxiv.org/abs/1409.0473
 
-using Flux: combine, flip, crossentropy, reset!, throttle
+using Flux: flip, crossentropy, reset!, throttle, Tracker.track
 
 include("0-data.jl")
 
@@ -13,6 +13,10 @@ Nh = 30 # size of hidden layer
 forward  = LSTM(Nin, Nh÷2)
 backward = LSTM(Nin, Nh÷2)
 encode(tokens) = vcat.(forward.(tokens), flip(backward, tokens))
+
+combine(x::AbstractMatrix, h::AbstractVector) = vcat(x, h .* trues(1, size(x, 2)))
+combine(x::AbstractVector, h::AbstractVector) = vcat(x, h)
+combine(x::AbstractMatrix, h::AbstractMatrix) = vcat(x, h)
 
 alignnet = Dense(2Nh, 1)
 align(s, t) = alignnet(combine(t, s))
@@ -32,7 +36,7 @@ end
 function decode1(tokens, phone)
   weights = asoftmax([align(recur.state[2], t) for t in tokens])
   context = sum(map((a, b) -> a .* b, weights, tokens))
-  y = recur(vcat(phone, context))
+  y = recur(track(vcat, phone, context))
   return softmax(toalpha(y))
 end
 
@@ -64,7 +68,7 @@ function predict(s)
   ps = Any[:start]
   for i = 1:50
     dist = decode1(ts, onehot(ps[end], phones))
-    next = wsample(phones, Flux.Tracker.value(dist))
+    next = wsample(phones, Flux.Tracker.data(dist))
     next == :end && break
     push!(ps, next)
   end
