@@ -51,7 +51,7 @@ L2_DECAY = 1f-2
 # Ornstein-Uhlenbeck Noise params
 μ = 0f0
 θ = 15f-2
-σ = 2f-1
+σn = 2f-1
 
 # --------------------------------- Memory ------------------------------------
 
@@ -80,7 +80,7 @@ struct OUNoise
   X
 end
 
-ou = OUNoise(μ, θ, σ, zeros(Float32, ACTION_SIZE) |> gpu)
+ou = OUNoise(μ, θ, σn, zeros(Float32, ACTION_SIZE) |> gpu)
 
 function sample_noise(ou::OUNoise)
   dx     = ou.θ * (ou.μ .- ou.X)
@@ -198,7 +198,14 @@ function action(state, train=true)
   end
   angle = clamp.(act_pred[1:1, :], -π, π) # returns action
 
-  return vcat(angle, act_pred[2:2, :])
+  return norm_action(vcat(angle, act_pred[2:2, :]))
+end
+
+function norm_action(a)
+	angle, weight = a
+	angle = σ(angle)*90
+	weight = weight + 200
+	return vcat(angle, weight)
 end
 
 function shoot(wind, angle, weight)
@@ -217,12 +224,12 @@ end
 
 function episode(train=true)
   wind, target_dist = target()
-  s = [wind_speed, target_dist]
+  s = [wind, target_dist]
   a = action(s, train)
   r = step!(s, a)
 
   if train
-    remember(s, a, zeros(Float32, 2), r, true)
+    remember(s, a, r, zeros(Float32, 2), true)
     replay()
   end
 
@@ -246,10 +253,12 @@ end
 
 for e=1:MIN_EXP_SIZE
   s = target()
-  a = 2rand(Float32, ACTION_SIZE) .* ACTION_BOUND .- ACTION_BOUND
+  a = norm_action(rand(Float32, ACTION_SIZE))
   r = step!(s, a)
   remember(s, a, r, zeros(Float32, 2), true)
 end
+
+rewards = []
 
 for e=1:MAX_EP
   global noise_scale
@@ -258,6 +267,7 @@ for e=1:MAX_EP
   print("Episode: $e | Score: $total_reward | ")
   score_mean = test()
   score_mean = @sprintf "%9.3f" score_mean
+  push!(rewards, score_mean)
   println("Mean score over 100 test episodes: $score_mean")
   noise_scale *= ϵ
 end
