@@ -288,3 +288,9 @@ for e=22579:MAX_EP
   print("mean: $score_mean) ")
   noise_scale *= ϵ
 end
+
+BSON.@save "values/rewards.bson" rewards
+actor = actor |> cpu
+BSON.@save "values/actor.bson" actor
+critic = critic |> cpu
+BSON.@save "values/critic.bson" critic
