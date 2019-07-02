@@ -264,7 +264,7 @@ end
 rewards = []
 
 for e=1:MAX_EP
-  global noise_scale
+  global noise_scale, actor, critic, reward
   total_reward = episode(true)
   total_reward = @sprintf "%9.3f" total_reward
 
@@ -282,6 +282,8 @@ for e=1:MAX_EP
   BSON.@save "$(pwd())/values/actor.bson" actor
   critic = critic |> cpu
   BSON.@save "$(pwd())/values/critic.bson" critic
+  actor = actor |> gpu
+  critic = critic |> gpu
 end
 
 BSON.@save "$(pwd())/values/rewards.bson" rewards
