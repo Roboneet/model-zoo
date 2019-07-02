@@ -276,6 +276,12 @@ for e=1:MAX_EP
 	  print("mean: $score_mean) ")
   end
   noise_scale *= ϵ
+
+  BSON.@save "$(pwd())/values/rewards.bson" rewards
+  actor = actor |> cpu
+  BSON.@save "$(pwd())/values/actor.bson" actor
+  critic = critic |> cpu
+  BSON.@save "$(pwd())/values/critic.bson" critic
 end
 
 BSON.@save "$(pwd())/values/rewards.bson" rewards
