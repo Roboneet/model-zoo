@@ -98,8 +98,8 @@ noise_scale = 1f0
 
 w_init(dims...) = 6f-3rand(Float32, dims...) .- 3f-3
 
-if isfile("values/actor.bson")
-	BSON.@load "values/actor.bson" actor
+if isfile("$(@__DIR__)/values/actor.bson")
+	BSON.@load "$(@__DIR__)/values/actor.bson" actor
 	actor = actor |> gpu
 else
 	actor = Chain(Dense(STATE_SIZE, 400, relu),
@@ -127,8 +127,8 @@ Base.deepcopy(c::crit) = crit(deepcopy(c.state_crit),
                               deepcopy(c.act_crit),
 			      			  deepcopy(c.sa_crit))
 
-if isfile("values/critic.bson")
-	BSON.@load "values/critic.bson" critic
+if isfile("$(@__DIR__)/values/critic.bson")
+	BSON.@load "$(@__DIR__)/values/critic.bson" critic
 	critic = critic |> gpu
 else
 	critic = crit(Chain(Dense(STATE_SIZE, 400, relu), Dense(400, 300)) |> gpu,
@@ -270,8 +270,8 @@ for e=1:MIN_EXP_SIZE
   remember(s, a, r, zeros(Float32, 2), true)
 end
 
-if isfile("values/rewards.bson")
-	BSON.@load "values/rewards.bson" rewards
+if isfile("$(@__DIR__)/values/rewards.bson")
+	BSON.@load "$(@__DIR__)/values/rewards.bson" rewards
 else
 	rewards = []
 end
@@ -289,8 +289,8 @@ for e=22579:MAX_EP
   noise_scale *= ϵ
 end
 
-BSON.@save "values/rewards.bson" rewards
+BSON.@save "$(@__DIR__)/values/rewards.bson" rewards
 actor = actor |> cpu
-BSON.@save "values/actor.bson" actor
+BSON.@save "$(@__DIR__)/values/actor.bson" actor
 critic = critic |> cpu
-BSON.@save "values/critic.bson" critic
+BSON.@save "$(@__DIR__)/values/critic.bson" critic

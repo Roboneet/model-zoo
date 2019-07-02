@@ -12,15 +12,18 @@ using CuArrays
 # should work
 cu(rand(2, 2)) + cu(rand(2, 2))
 
-;git clone https://github.com/Roboneet/model-zoo.git
-;git checkout dp
+run(`git clone https://github.com/Roboneet/model-zoo.git`)
 
-;ls
+run(`ls`)
 
-;cd model-zoo/games/differentiable-programming/trebuchet
+cd("/content/model-zoo/")
+run(`git checkout dp`)
+cd("./games/differentiable-programming/trebuchet")
+
 
 Pkg.activate(".")
 Pkg.instantiate()
-include("DDPG.jl")
+println("$(@__DIR__)")
+include("$(@__DIR__)/DDPG.jl")
 
-;cp -r ./values/ /content/drive/My\ Drive/trebuchet/values
+run(`cp -r ./values/ /content/drive/My\ Drive/trebuchet/values`)
