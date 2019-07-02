@@ -267,11 +267,14 @@ for e=1:MAX_EP
   global noise_scale
   total_reward = episode(true)
   total_reward = @sprintf "%9.3f" total_reward
-  print("(Episode: $e, Score: $total_reward, ")
+
   score_mean = test()
   score_mean = @sprintf "%9.3f" score_mean
   push!(rewards, score_mean)
-  print("mean: $score_mean) ")
+  if e % 100 == 0
+	  print("(Episode: $e, Score: $total_reward, ")
+	  print("mean: $score_mean) ")
+  end
   noise_scale *= ϵ
 end
 
