@@ -280,3 +280,5 @@ actor = actor |> cpu
 BSON.@save "$(pwd())/values/actor.bson" actor
 critic = critic |> cpu
 BSON.@save "$(pwd())/values/critic.bson" critic
+a = "VALUES_SAVED! YAY!"
+BSON.@save "$(pwd())/values/YAAAY.bson" a
