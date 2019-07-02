@@ -23,7 +23,7 @@ cd("./games/differentiable-programming/trebuchet")
 
 Pkg.activate(".")
 Pkg.instantiate()
-println("$(@__DIR__)")
-include("$(@__DIR__)/DDPG.jl")
+println("$(@__DIR__), $(pwd())")
+include("$(pwd())/DDPG.jl")
 
 run(`cp -r ./values/ /content/drive/My\ Drive/trebuchet/values`)
