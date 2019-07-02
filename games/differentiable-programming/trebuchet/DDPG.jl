@@ -98,14 +98,10 @@ noise_scale = 1f0
 
 w_init(dims...) = 6f-3rand(Float32, dims...) .- 3f-3
 
-if isfile("$(pwd())/values/actor.bson")
-	BSON.@load "$(pwd())/values/actor.bson" actor
-	actor = actor |> gpu
-else
-	actor = Chain(Dense(STATE_SIZE, 400, relu),
+
+actor = Chain(Dense(STATE_SIZE, 400, relu),
 	      	  Dense(400, 300, relu),
               Dense(300, ACTION_SIZE, tanh, initW=w_init)) |> gpu
-end
 
 actor_target = deepcopy(actor)
 
@@ -127,14 +123,9 @@ Base.deepcopy(c::crit) = crit(deepcopy(c.state_crit),
                               deepcopy(c.act_crit),
 			      			  deepcopy(c.sa_crit))
 
-if isfile("$(pwd())/values/critic.bson")
-	BSON.@load "$(pwd())/values/critic.bson" critic
-	critic = critic |> gpu
-else
-	critic = crit(Chain(Dense(STATE_SIZE, 400, relu), Dense(400, 300)) |> gpu,
+critic = crit(Chain(Dense(STATE_SIZE, 400, relu), Dense(400, 300)) |> gpu,
 	              	  	Dense(ACTION_SIZE, 300) |> gpu,
 		      			Dense(300, 1, initW=w_init) |> gpu)
-end
 critic_target = deepcopy(critic)
 
 # ------------------------------- Param Update Functions---------------------------------
@@ -270,14 +261,9 @@ for e=1:MIN_EXP_SIZE
   remember(s, a, r, zeros(Float32, 2), true)
 end
 
-if isfile("$(pwd())/values/rewards.bson")
-	BSON.@load "$(pwd())/values/rewards.bson" rewards
-else
-	rewards = []
-end
+rewards = []
 
-# continue training from 22579
-for e=22579:MAX_EP
+for e=1:MAX_EP
   global noise_scale
   total_reward = episode(true)
   total_reward = @sprintf "%9.3f" total_reward
