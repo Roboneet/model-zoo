@@ -162,7 +162,7 @@ function replay()
   a′ = data(actor_target(s′))
   v′ = data(critic_target(s′, a′))
   y = r .+ γ * v′ .* s_mask	# set v′ to 0 where s_ is terminal state
-  @show size(s)
+  # @show size(s)
   v = critic(s, a)
   loss_crit = Flux.mse(y, v) + L2_loss(critic)
 

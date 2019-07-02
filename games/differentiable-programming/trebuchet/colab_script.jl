@@ -24,10 +24,11 @@ try
 
     Pkg.activate(".")
     Pkg.instantiate()
-    println("$(@__DIR__), $(pwd())")
+    println("start DDPG")
     include("$(pwd())/DDPG.jl")
 
     run(`cp -r ./values/ /content/drive/My\ Drive/trebuchet/values`)
+    println("values backed up")
 catch e
     println("error occured\n")
     show(e)
@@ -36,3 +37,4 @@ end
 
 cd("/content")
 rm("model-zoo", recursive=true, force=true)
+println("cleaned up")
