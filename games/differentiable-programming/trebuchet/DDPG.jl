@@ -278,12 +278,10 @@ for e=1:MAX_EP
   noise_scale *= ϵ
 
   BSON.@save "$(pwd())/values/rewards.bson" rewards
-  actor = actor |> cpu
-  BSON.@save "$(pwd())/values/actor.bson" actor
-  critic = critic |> cpu
-  BSON.@save "$(pwd())/values/critic.bson" critic
-  actor = actor |> gpu
-  critic = critic |> gpu
+  a = actor |> cpu
+  BSON.@save "$(pwd())/values/actor.bson" a
+  c = critic |> cpu
+  BSON.@save "$(pwd())/values/critic.bson" c
 end
 
 BSON.@save "$(pwd())/values/rewards.bson" rewards
