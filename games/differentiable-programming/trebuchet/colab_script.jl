@@ -33,7 +33,7 @@ catch e
     println("error occured\n")
     show(e)
     println()
-    run(`cp -r ./values/ /content/drive/My\ Drive/trebuchet/error_backup`)
+    run(`cp -r ./values/ /content/drive/My\ Drive/trebuchet/error_backup/`)
 end
 
 cd("/content")

@@ -50,14 +50,13 @@ meanloss() = mean(sqrt(loss(target()...)) for i = 1:100)
 opt = ADAM()
 
 dataset = (target() for i = 1:1000)
-p = plot([], [])
+# p = plot([], [])
 losses = [meanloss()]
 # cb = Flux.throttle(() -> @show(meanloss()), 10)
-cb = Flux.throttle(() -> begin
-  global p, losses
+cb = () -> begin
+  global losses
   avgloss = meanloss()
-  @show avgloss
   push!(losses, avgloss)
-end, 1)
+end
 
-Flux.@epochs 5 Flux.train!(loss, θ, dataset, opt, cb = cb)
+Flux.@epochs 10 Flux.train!(loss, θ, dataset, opt, cb = cb)
