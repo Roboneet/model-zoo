@@ -270,7 +270,7 @@ for e=1:MAX_EP
 
   score_mean = test()
   score_mean = @sprintf "%9.3f" score_mean
-  push!(reward, parse(Float32, score_mean))
+  push!(rewards, parse(Float32, score_mean))
   if e % 100 == 0
 	  print("(Episode: $e, Score: $total_reward, ")
 	  print("mean: $score_mean) \n")
