@@ -4,6 +4,7 @@ using Flux.Optimise: _update_params!
 using DataStructures: CircularBuffer
 using Distributions: sample
 using BSON
+using Stats: mean
 
 #using CuArrays
 
@@ -26,6 +27,9 @@ using BSON
 # Output: ReleaseAngle, Weight
 =#
 
+# set Random seed
+Random.seed!(10)
+
 # ----------------------------- Parameters -------------------------------------
 
 STATE_SIZE = 2
@@ -35,8 +39,9 @@ DIST  = (2f1, 1f2)	# Maximum target distance
 SPEED =   5f0 # Maximum wind speed
 
 ACTION_BOUND = [DIST[2]-DIST[1], SPEED]
-MAX_EP = 50_000
+MAX_EP = 10_000
 MAX_EP_LENGTH = 1000
+TEST_EP = 10
 
 BATCH_SIZE = 64
 MEM_SIZE = 100_000
@@ -99,9 +104,11 @@ noise_scale = 1f0
 w_init(dims...) = 6f-3rand(Float32, dims...) .- 3f-3
 
 
-actor = Chain(Dense(STATE_SIZE, 400, relu),
-	      	  Dense(400, 300, relu),
-              Dense(300, ACTION_SIZE, tanh, initW=w_init)) |> gpu
+Actor() = Chain(Dense(STATE_SIZE, 400, relu),
+		      	  Dense(400, 300, relu),
+	              Dense(300, ACTION_SIZE, tanh, initW=w_init)) |> gpu
+
+actor = Actor()
 
 actor_target = deepcopy(actor)
 
@@ -123,10 +130,21 @@ Base.deepcopy(c::crit) = crit(deepcopy(c.state_crit),
                               deepcopy(c.act_crit),
 			      			  deepcopy(c.sa_crit))
 
-critic = crit(Chain(Dense(STATE_SIZE, 400, relu), Dense(400, 300)) |> gpu,
+Critic() = crit(Chain(Dense(STATE_SIZE, 400, relu), Dense(400, 300)) |> gpu,
 	              	  	Dense(ACTION_SIZE, 300) |> gpu,
 		      			Dense(300, 1, initW=w_init) |> gpu)
+
+critic = Critic()
 critic_target = deepcopy(critic)
+
+function reset_everything!()
+	global actor, critic, actor_target, critic_target, noise_scale, memory, ou
+	noise_scale = 1f0
+	memory = CircularBuffer{Any}(MEM_SIZE)
+	ou = OUNoise(μ, θ, σn, zeros(Float32, ACTION_SIZE) |> gpu)
+	actor, critic = Actor(), Critic()
+	actor_target, critic_target = deepcopy(actor), deepcopy(critic)
+end
 
 # ------------------------------- Param Update Functions---------------------------------
 
@@ -241,13 +259,12 @@ end
 # -------------------------------- Testing -------------------------------------
 
 # Returns average score over 100 episodes
-function test()
-  score_mean = 0f0
-  for _=1:100
+function test(scores=zeros(Float32, TEST_EP))
+  for i=1:TEST_EP
     total_reward = episode(false)
-    score_mean += total_reward / 100
+    scores[i] = total_reward
   end
-  return score_mean
+  return scores
 end
 
 # ------------------------------ Training --------------------------------------
@@ -261,31 +278,39 @@ for e=1:MIN_EXP_SIZE
   remember(s, a, r, zeros(Float32, 2), true)
 end
 
-rewards = []
+run(`mkdir -p ./values/`)
 
-for e=1:MAX_EP
-  global noise_scale, actor, critic, reward
-  total_reward = episode(true)
-  total_reward = @sprintf "%9.3f" total_reward
+function DDPG(i=1, rewards = zeros(Float32, MAX_EP, TEST_EP))
+	reset_everything!()
+	for e=1:MAX_EP
+	  global noise_scale, actor, critic, reward
+	  total_reward = episode(true)
+	  total_reward = @sprintf "%9.3f" total_reward
 
-  score_mean = test()
-  score_mean = @sprintf "%9.3f" score_mean
-  push!(rewards, parse(Float32, score_mean))
-  if e % 100 == 0
-	  print("(Episode: $e, Score: $total_reward, ")
-	  print("mean: $score_mean) \n")
-  end
-  noise_scale *= ϵ
+	  scores = test(rewards[e, :])
+	  if e % 100 == 0
+		  print("(Episode: $e, Score: $total_reward, ")
+		  print("mean: $(mean(scores))) \n")
+	  end
+	  noise_scale *= ϵ
 
-  BSON.@save "$(pwd())/values/rewards.bson" rewards
-  a = actor |> cpu
-  BSON.@save "$(pwd())/values/actor.bson" a
-  c = critic |> cpu
-  BSON.@save "$(pwd())/values/critic.bson" c
+	  BSON.@save "$(pwd())/values/rewards$i.bson" rewards
+	end
+	rewards
 end
 
-BSON.@save "$(pwd())/values/rewards.bson" rewards
-actor = actor |> cpu
+function manyDDPG()
+	rewardCollection = zeros(Float32, 10, MAX_EP, TEST_EP)
+	for i=1:10
+		DDPG(i, rewardCollection[i, :, :])
+	end
+	rewardCollection
+end
+
+rewardCollection = manyDDPG()
+
+BSON.@save "$(pwd())/values/rewardCollection.bson" rewardCollection
+
 BSON.@save "$(pwd())/values/actor.bson" actor
 critic = critic |> cpu
 BSON.@save "$(pwd())/values/critic.bson" critic
