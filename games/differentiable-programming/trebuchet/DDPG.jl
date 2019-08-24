@@ -5,6 +5,7 @@ using DataStructures: CircularBuffer
 using Distributions: sample
 using BSON
 using StatsBase: mean
+using Random
 
 #using CuArrays
 
