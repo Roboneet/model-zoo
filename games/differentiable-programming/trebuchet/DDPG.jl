@@ -250,7 +250,7 @@ function episode(train=true)
   s = [wind, target_dist]
   a = action(s, train)
   r = step!(s, a)
-
+  println("after step!")
   if train
     remember(s, a, r, zeros(Float32, 2), true)
     replay()
