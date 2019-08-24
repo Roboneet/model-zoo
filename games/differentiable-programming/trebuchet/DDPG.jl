@@ -4,7 +4,7 @@ using Flux.Optimise: _update_params!
 using DataStructures: CircularBuffer
 using Distributions: sample
 using BSON
-using Stats: mean
+using StatsBase: mean
 
 #using CuArrays
 
