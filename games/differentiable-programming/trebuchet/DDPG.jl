@@ -255,7 +255,7 @@ function episode(train=true)
     remember(s, a, r, zeros(Float32, 2), true)
     replay()
   end
-
+  println("before √-r")
   return √-r
 end
 # -------------------------------- Testing -------------------------------------
