@@ -140,6 +140,7 @@ critic_target = deepcopy(critic)
 
 function reset_everything!()
 	global actor, critic, actor_target, critic_target, noise_scale, memory, ou
+	println("[reset_everything]")
 	noise_scale = 1f0
 	memory = CircularBuffer{Any}(MEM_SIZE)
 	ou = OUNoise(μ, θ, σn, zeros(Float32, ACTION_SIZE) |> gpu)
@@ -309,7 +310,7 @@ function manyDDPG()
 	rewardCollection
 end
 
-# rewardCollection = manyDDPG()
+rewardCollection = manyDDPG()
 
 BSON.@save "$(pwd())/values/rewardCollection.bson" rewardCollection
 
