@@ -289,7 +289,7 @@ function DDPG(i=1, rewards = zeros(Float32, MAX_EP, TEST_EP))
 	  global noise_scale, actor, critic, reward
 	  total_reward = episode(true)
 	  total_reward = @sprintf "%9.3f" total_reward
-
+      println("after episode")
 	  scores = test(rewards[e, :])
 	  if e % 100 == 0
 		  print("(Episode: $e, Score: $total_reward, ")
