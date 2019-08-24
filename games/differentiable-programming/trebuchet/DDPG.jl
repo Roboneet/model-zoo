@@ -178,6 +178,7 @@ opt_act  = ADAM(η_act)
 function replay()
   s, a, r, s′, s_mask = getData()
 
+  println("replay")
   # Update Critic
   a′ = data(actor_target(s′))
   v′ = data(critic_target(s′, a′))
