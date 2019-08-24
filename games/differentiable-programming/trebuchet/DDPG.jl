@@ -284,6 +284,7 @@ run(`mkdir -p ./values/`)
 function DDPG(i=1, rewards = zeros(Float32, MAX_EP, TEST_EP))
 	reset_everything!()
 	for e=1:MAX_EP
+	  println("DDPG iteration $i-$e")
 	  global noise_scale, actor, critic, reward
 	  total_reward = episode(true)
 	  total_reward = @sprintf "%9.3f" total_reward
@@ -308,7 +309,7 @@ function manyDDPG()
 	rewardCollection
 end
 
-rewardCollection = manyDDPG()
+# rewardCollection = manyDDPG()
 
 BSON.@save "$(pwd())/values/rewardCollection.bson" rewardCollection
 
