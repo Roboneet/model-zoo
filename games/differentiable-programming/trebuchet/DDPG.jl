@@ -139,13 +139,16 @@ critic = Critic()
 critic_target = deepcopy(critic)
 
 function reset_everything!()
-	global actor, critic, actor_target, critic_target, noise_scale, memory, ou
+	global actor, critic, actor_target, critic_target, noise_scale, memory, ou,
+		opt_act, opt_crit
 	println("[reset_everything]")
 	noise_scale = 1f0
 	memory = CircularBuffer{Any}(MEM_SIZE)
 	ou = OUNoise(μ, θ, σn, zeros(Float32, ACTION_SIZE) |> gpu)
 	actor, critic = Actor(), Critic()
 	actor_target, critic_target = deepcopy(actor), deepcopy(critic)
+	opt_crit = ADAM(η_crit)
+	opt_act  = ADAM(η_act)
 end
 
 # ------------------------------- Param Update Functions---------------------------------
@@ -178,7 +181,6 @@ opt_act  = ADAM(η_act)
 function replay()
   s, a, r, s′, s_mask = getData()
 
-  println("replay")
   # Update Critic
   a′ = data(actor_target(s′))
   v′ = data(critic_target(s′, a′))
@@ -251,12 +253,12 @@ function episode(train=true)
   s = [wind, target_dist]
   a = action(s, train)
   r = step!(s, a)
-  println("after step!")
+
   if train
     remember(s, a, r, zeros(Float32, 2), true)
     replay()
   end
-  println("before √-r")
+
   return √-r
 end
 # -------------------------------- Testing -------------------------------------
@@ -272,26 +274,29 @@ end
 
 # ------------------------------ Training --------------------------------------
 
-# Populate memory with random actions
 
-for e=1:MIN_EXP_SIZE
-  s = target()
-  a = norm_action(rand(Float32, ACTION_SIZE))
-  r = step!(s, a)
-  remember(s, a, r, zeros(Float32, 2), true)
-end
 
 run(`mkdir -p ./values/`)
 
 function DDPG(i=1, rewards = zeros(Float32, MAX_EP, TEST_EP))
 	reset_everything!()
+	# Populate memory with random actions
+
+	for e=1:MIN_EXP_SIZE
+	  s = target()
+	  a = norm_action(rand(Float32, ACTION_SIZE))
+	  r = step!(s, a)
+	  remember(s, a, r, zeros(Float32, 2), true)
+	end
+
+	println("DDPG iteration $i")
 	for e=1:MAX_EP
-	  println("DDPG iteration $i-$e")
 	  global noise_scale, actor, critic, reward
 	  total_reward = episode(true)
 	  total_reward = @sprintf "%9.3f" total_reward
-      println("after episode")
-	  scores = test(rewards[e, :])
+
+	  scores = test()
+	  rewards[e, :] .= scores
 	  if e % 100 == 0
 		  print("(Episode: $e, Score: $total_reward, ")
 		  print("mean: $(mean(scores))) \n")
@@ -303,15 +308,15 @@ function DDPG(i=1, rewards = zeros(Float32, MAX_EP, TEST_EP))
 	rewards
 end
 
-function manyDDPG()
-	rewardCollection = zeros(Float32, 10, MAX_EP, TEST_EP)
-	for i=1:10
-		DDPG(i, rewardCollection[i, :, :])
+function manyDDPG(n)
+	rewardCollection = zeros(Float32, n, MAX_EP, TEST_EP)
+	for i=1:n
+		rewardCollection[i, :, :] .= DDPG(i)
 	end
 	rewardCollection
 end
 
-rewardCollection = manyDDPG()
+rewardCollection = manyDDPG(1)
 
 BSON.@save "$(pwd())/values/rewardCollection.bson" rewardCollection
 
