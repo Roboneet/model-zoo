@@ -316,7 +316,7 @@ function manyDDPG(n)
 	rewardCollection
 end
 
-rewardCollection = manyDDPG(1)
+rewardCollection = manyDDPG(10)
 
 BSON.@save "$(pwd())/values/rewardCollection.bson" rewardCollection
 
